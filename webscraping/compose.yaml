@@ -1,0 +1,14 @@
+services:
+  webscraper:
+    build:
+      context: .
+    # Bind mount to save the output file to the host machine so you can access shared_data.json locally
+    volumes:
+      - .:/usr/src/app
+    develop:
+      watch:
+        - path: ./requirements.txt
+          action: rebuild
+        - path: .
+          target: /usr/src/app
+          action: sync
