@@ -1,0 +1,44 @@
+name: kafka-mechanics
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  pytest-with-kafka:
+    name: pytest against local Kafka (compose)
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install Python deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Start Kafka (KRaft)
+        run: docker compose up -d --wait
+
+      - name: Wait for broker
+        env:
+          KAFKA_BOOTSTRAP: localhost:9092
+        run: |
+          python -c "from tests.conftest import wait_for_kafka; wait_for_kafka('localhost:9092', timeout_s=90)"
+
+      - name: pytest
+        env:
+          KAFKA_BOOTSTRAP: localhost:9092
+        run: pytest tests/ -q
+
+      - name: Stop Kafka
+        if: always()
+        run: docker compose down
