@@ -1,5 +1,24 @@
 # streaming-service
 
+## Fixed Income Transaction & Holding Event Streams
+
+Additive Kafka path under [`fi_streaming/`](fi_streaming/). Original `orders` topic, `producer/producer.py`, and `consumer/consumer.py` are unchanged.
+
+| Topic | Grain | Maps to |
+|---|---|---|
+| `fi.position.updates` | `account_id` + `instrument_id` (+ `transaction_id`, `application_id`) | **Holding Master** |
+| `fi.cashflow.events` | `account_id` + `transaction_id` | **Transaction Master** |
+| `fi.prepayment.signals` | `account_id` + `application_id` | Transaction Master (prepay) feeding Holding Master factor |
+
+```bash
+python -m fi_streaming.producer --count 10
+python -m fi_streaming.consumer --max-records 30 --timeout-s 20
+```
+
+Messages are keyed by `account_id`. The sink upserts SQLite `holding_events` / `transaction_events` on `event_id`. All payloads are synthetic.
+
+---
+
 Local Kafka demo of produce/consume mechanics using the same synthetic e-commerce **order events** domain as `airflow-dbt-warehouse` (customer, order status, order total), with an `event_id` for sink dedup — not Hacker News, not market data.
 
 `kafka_streaming/` and `webscraping/` are the original Hacker-News scraper + FastAPI UI demo. They are not the mechanics demo described below.
